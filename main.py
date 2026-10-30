@@ -34,7 +34,11 @@ class DataIdentifierObfuscator:
             str: The text with SSNs replaced.
         """
         ssn_pattern = r"\b\d{3}-\d{2}-\d{4}\b"  # Basic SSN regex
-        return re.sub(ssn_pattern, self.generate_fake_ssn(), text)
+        # The replacement must be a callable. Passing one pre-generated SSN
+        # string would stamp every match with the same fake number, which
+        # both leaks that the matches were linked and contradicts the point
+        # of generating a fresh identifier per occurrence.
+        return re.sub(ssn_pattern, lambda _match: self.generate_fake_ssn(), text)
     
     def obfuscate_text(self, text, identifier_type="ssn"):
         """
