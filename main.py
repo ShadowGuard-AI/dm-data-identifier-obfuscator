@@ -3,6 +3,7 @@ import logging
 import random
 import re
 import sys
+from pathlib import Path
 from faker import Faker
 
 # Configure logging
@@ -18,6 +19,7 @@ class DataIdentifierObfuscator:
         Initializes the DataIdentifierObfuscator with Faker for data generation.
         """
         self.fake = Faker()
+        self.replacement_count = 0
 
     def generate_fake_ssn(self):
         """
@@ -38,7 +40,11 @@ class DataIdentifierObfuscator:
         # string would stamp every match with the same fake number, which
         # both leaks that the matches were linked and contradicts the point
         # of generating a fresh identifier per occurrence.
-        return re.sub(ssn_pattern, lambda _match: self.generate_fake_ssn(), text)
+        # subn also returns the replacement count, which main checks: a
+        # run that replaced nothing must not report a finished obfuscation.
+        new_text, count = re.subn(ssn_pattern, lambda _match: self.generate_fake_ssn(), text)
+        self.replacement_count = count
+        return new_text
     
     def obfuscate_text(self, text, identifier_type="ssn"):
         """
@@ -93,6 +99,13 @@ def main():
     parser = setup_argparse()
     args = parser.parse_args()
 
+    # The output may not name the input file, in any spelling. Resolved
+    # paths are compared, so a ./ alias or a symlink to the input is
+    # caught as well as the same string. Refuse before any write.
+    if Path(args.output_file).resolve() == Path(args.input_file).resolve():
+        logging.error("Output file must not be the input file. Choose a different output path.")
+        sys.exit(1)
+
     try:
         # Input validation: Check if input file exists
         try:
@@ -107,6 +120,12 @@ def main():
 
         obfuscator = DataIdentifierObfuscator()
         obfuscated_data = obfuscator.obfuscate_text(input_data, args.identifier_type)
+
+        if obfuscator.replacement_count == 0:
+            # Nothing was obfuscated, so this run must not print the
+            # success line and must not write an output file.
+            print("No identifiers found.")
+            sys.exit(1)
 
         # Output handling: Write obfuscated data to the output file
         try:
