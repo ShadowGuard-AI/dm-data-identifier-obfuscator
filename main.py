@@ -18,6 +18,12 @@ class DataIdentifierObfuscator:
         """
         Initializes the DataIdentifierObfuscator with Faker for data generation.
         """
+        # I leave Faker unseeded, so every run invents different fakes for
+        # the same input. Combined with the per match callable below, that
+        # means the same real number appearing twice in one file gets two
+        # different replacements. Nothing in the output can be matched back
+        # to a repeated value in the input, and nothing can be reproduced
+        # on a second run either.
         self.fake = Faker()
         self.replacement_count = 0
 
@@ -35,6 +41,11 @@ class DataIdentifierObfuscator:
         Returns:
             str: The text with SSNs replaced.
         """
+        # This pattern only sees the dashed form, three two four with
+        # hyphens. A number written as nine plain digits, or spaced instead
+        # of dashed, passes through untouched, and the pattern checks shape
+        # only: a dashed string that could never be issued still counts as
+        # a match and gets replaced.
         ssn_pattern = r"\b\d{3}-\d{2}-\d{4}\b"  # Basic SSN regex
         # The replacement must be a callable. Passing one pre-generated SSN
         # string would stamp every match with the same fake number, which
@@ -43,6 +54,9 @@ class DataIdentifierObfuscator:
         # subn also returns the replacement count, which main checks: a
         # run that replaced nothing must not report a finished obfuscation.
         new_text, count = re.subn(ssn_pattern, lambda _match: self.generate_fake_ssn(), text)
+        # This is an assignment, not a running total. If one instance ever
+        # obfuscates two texts in a row, the count afterwards describes only
+        # the second one, which is the call main happens to make exactly once.
         self.replacement_count = count
         return new_text
     
@@ -107,7 +121,11 @@ def main():
         sys.exit(1)
 
     try:
-        # Input validation: Check if input file exists
+        # I read the whole file into memory before touching it. That keeps
+        # the replace step simple, and it sets the size limit for this tool:
+        # a file too large to hold as one string is too large for it, full
+        # stop. The open names no encoding, so the platform default decides
+        # how the bytes are read.
         try:
             with open(args.input_file, 'r') as f:
                 input_data = f.read()
