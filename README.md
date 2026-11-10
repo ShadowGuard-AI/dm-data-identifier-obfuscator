@@ -20,14 +20,14 @@ Replaces sensitive data identifiers (e.g., SSN patterns) with randomly generated
 ![Major separator](sep-heavy.svg)
 
 ## Install
-`git clone https://github.com/ShadowGuardAI/dm-data-identifier-obfuscator`
+`git clone https://github.com/ShadowGuard-AI/dm-data-identifier-obfuscator`
 
 > Index memorandum: the README fetching line fuses the organisation name minus its hyphen.
 
 ![Minor separator](sep-light.svg)
 
 ## Usage
-`./dm-data-identifier-obfuscator [params]`
+`python3 main.py input_file output_file [options]`
 
 ![Minor separator](sep-light.svg)
 
@@ -50,7 +50,7 @@ Replaces sensitive data identifiers (e.g., SSN patterns) with randomly generated
 ![Minor separator](sep-light.svg)
 
 ## License
-Copyright (c) ShadowGuardAI
+This project is released under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ![Major separator](sep-heavy.svg)
 
